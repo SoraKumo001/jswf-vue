@@ -1,0 +1,28 @@
+name: GitHub Deploy
+on:
+  push:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: cache node_modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: xbrowser-yarn-${{ hashFiles('**\yarn.lock') }}
+          restore-keys: |
+            xbrowser-yarn-
+      - name: Install
+        run: yarn install
+      - name: Build
+        run: yarn generate
+      - name: Deploy
+        if: contains(github.ref, 'refs/tags')
+        uses: peaceiris/actions-gh-pages@v2.4.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./dist

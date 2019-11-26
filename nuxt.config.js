@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   mode: 'spa',
   /*
    ** Headers of the page
@@ -63,3 +63,13 @@ module.exports = {
     port: 8080
   }
 }
+const rep = process.env.GITHUB_REPOSITORY
+const routerBase = rep
+  ? {
+      router: {
+        base: rep.substring(rep.lastIndexOf('/')) + '/'
+      }
+    }
+  : {}
+
+module.exports = { ...config, ...routerBase }

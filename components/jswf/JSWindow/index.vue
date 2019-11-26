@@ -1,7 +1,6 @@
 <template>
   <div
-    ref="rootRef"
-    class="jswindow"
+    :class="$style.jsWindow"
     :style="styleObject"
     @mousedown="onMouseDown"
     @touchstart="onMouseDown"
@@ -15,7 +14,7 @@
     <Title
       :active="active"
       :size="titleSize"
-      :window-state="windowState"
+      :window-state="nowWindowState"
       @set-state="onWindowState"
     >
       {{ title }}
@@ -95,7 +94,7 @@ export default class JSWindow extends Vue {
   moveable!: boolean
   @Prop({ type: Number, default: WindowState.NORMAL })
   windowState!: number
-
+  private $style!: { [key: string]: string }
   private px!: number | null
   private py!: number | null
   private pwidth!: number
@@ -107,13 +106,12 @@ export default class JSWindow extends Vue {
 
   borderSize: number = 8
 
-  oldEnumState!: number
-  boxEnumState!: number
+  nowWindowState: number = this.windowState
+  oldWindowState: number = WindowState.HIDE
+  changeWindowState: number = WindowState.HIDE
 
   @Ref()
-  private rootRef!: HTMLDivElement
-  @Ref()
-  private clientRef!: HTMLDivElement
+  private clientRef!: Vue
   private windowInfo: WindowInfo = {
     x: this.x,
     y: this.y,
@@ -133,7 +131,7 @@ export default class JSWindow extends Vue {
     clientHeight: 0,
     windowState: this.windowState,
     windowStyle: 0,
-    realWindowState: this.boxEnumState,
+    realWindowState: this.changeWindowState,
     onUpdate: null,
     clientStyle: {}
   }
@@ -151,7 +149,7 @@ export default class JSWindow extends Vue {
     if (Manager.moveNode == null) {
       this.foreground()
       if (this.moveable || Manager.frame) {
-        Manager.moveNode = this.rootRef
+        Manager.moveNode = this.$el as HTMLElement
         const p = Manager.getPos((e as unknown) as MouseEvent | TouchEvent)
         Manager.baseX = p.x
         Manager.baseY = p.y
@@ -166,7 +164,6 @@ export default class JSWindow extends Vue {
   private onFrame(e: MouseEvent | TouchEvent) {
     if (e.currentTarget && Manager.frame == null) {
       Manager.frame = (e.currentTarget as EventTarget & { id: string }).id
-      console.log(Manager.frame)
     }
   }
   /**
@@ -177,7 +174,8 @@ export default class JSWindow extends Vue {
   foreground(): void {
     // Activeになるノードを取得
     const activeNodes = new Set<HTMLElement>()
-    let node: (HTMLElement & { _symbol?: Symbol }) | null = this.rootRef
+    let node: (HTMLElement & { _symbol?: Symbol }) | null = this
+      .$el as HTMLElement
     if (node) {
       let topNode: HTMLElement = node
       do {
@@ -207,8 +205,10 @@ export default class JSWindow extends Vue {
     this.py = this.y
     this.pwidth = this.width
     this.pheight = this.height
+    this.nowWindowState = this.windowState
 
-    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
+    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this
+      .$el as HTMLElement
     if (node) {
       node._symbol = this
 
@@ -240,8 +240,9 @@ export default class JSWindow extends Vue {
     }, 10)
   }
   update() {
-    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
-    const clientNode: HTMLElement | null = this.clientRef
+    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this
+      .$el as HTMLElement
+    const clientNode: HTMLElement | null = this.clientRef.$el as HTMLElement
     let x: number,
       y: number,
       width: number,
@@ -259,8 +260,7 @@ export default class JSWindow extends Vue {
       const parentHeight = this.overlapped
         ? window.innerHeight
         : parent.clientHeight
-
-      switch (this.boxEnumState) {
+      switch (this.changeWindowState) {
         case WindowState.MAX:
           x = 0
           y = 0
@@ -293,7 +293,6 @@ export default class JSWindow extends Vue {
           }
           clientWidth = this.pwidth
           clientHeight = 0
-
           break
         default:
           width = this.pwidth
@@ -347,24 +346,22 @@ export default class JSWindow extends Vue {
       realHeight: height,
       clientWidth,
       clientHeight,
-      windowState: this.windowState,
-      realWindowState: this.boxEnumState
+      windowState: this.nowWindowState
     }
 
     this.styleObject = {
-      width: this.pwidth + 'px',
-      height: this.pheight + 'px',
+      width: width + 'px',
+      height: height + 'px',
       left: x + 'px',
       top: y + 'px'
     }
     this.changeState()
   }
   private changeState() {
-    if (this.oldEnumState === this.windowState) {
+    if (this.oldWindowState === this.nowWindowState) {
       return
     }
-    this.oldEnumState = this.windowInfo.windowState
-    switch (this.windowState) {
+    switch (this.nowWindowState) {
       case WindowState.NORMAL:
         this.normal()
         break
@@ -378,26 +375,27 @@ export default class JSWindow extends Vue {
         this.hide()
         break
     }
+    this.oldWindowState = this.nowWindowState
   }
   private min() {
-    const rootNode: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
-    const clientNode: (HTMLElement & { _symbol?: JSWindow }) | null = this
-      .clientRef
+    const rootNode: HTMLElement | null = this.$el as HTMLElement
+    const clientNode: HTMLElement | null = this.clientRef.$el as HTMLElement
     if (!rootNode || !clientNode) {
       return
     }
-    if (this.boxEnumState === WindowState.MIN) {
-      clientNode.style.animation =
-        'MinRestoreClient 0.1s ease 0s 1 alternate forwards'
-      rootNode.style.animation =
-        'MinRestoreRoot 0.5s ease 0s 1 alternate forwards'
-      this.boxEnumState = WindowState.NORMAL
+    if (this.oldWindowState === WindowState.MIN) {
+      clientNode.style.animation = `${this.$style.MinRestoreClient} 0.1s ease 0s 1 alternate forwards`
+      rootNode.style.animation = `${this.$style.MinRestoreRoot} 0.5s ease 0s 1 alternate forwards`
+      this.changeWindowState = WindowState.NORMAL
+      // this.$forceUpdate()
     } else {
       // rootNode.style.animation = "";
       // clientNode.style.animation = "";
       const animationProc = () => {
-        this.boxEnumState = WindowState.MIN
+        this.changeWindowState = WindowState.MIN
+        this.$forceUpdate()
         clientNode.removeEventListener('animationend', animationProc)
+
         setTimeout(() => {
           rootNode.style.animation = ''
           clientNode.style.animation = ''
@@ -405,28 +403,28 @@ export default class JSWindow extends Vue {
       }
       clientNode.addEventListener('animationend', animationProc)
       setTimeout(() => {
-        rootNode.style.animation = 'MinRoot 0.5s ease 0s 1 forwards'
-        clientNode.style.animation =
-          'MinClient 0.5s ease 0s 1 alternate forwards'
+        rootNode.style.animation = `${this.$style.MinRoot} 0.5s ease 0s 1 forwards`
+        clientNode.style.animation = `${this.$style.MinClient} 0.5s ease 0s 1 alternate forwards`
       }, 1)
     }
   }
   private max() {
-    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
+    const node: HTMLElement | null = this.$el as HTMLElement
     if (!node) {
       return
     }
     node.style.animation = ''
     setTimeout(() => {
-      this.boxEnumState = WindowState.MAX
-      node.style.animation = 'Max 0.5s ease 0s 1 forwards'
+      this.changeWindowState = WindowState.MAX
+      this.$forceUpdate()
+      node.style.animation = `${this.$style.Max} 0.5s ease 0s 1 forwards`
     }, 1)
   }
   private normal() {
-    if (this.oldEnumState === WindowState.MIN) {
+    if (this.oldWindowState === WindowState.MIN) {
       this.min()
-    } else if (this.oldEnumState === WindowState.HIDE) {
-      const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
+    } else if (this.oldWindowState === WindowState.HIDE) {
+      const node: HTMLElement | null = this.$el as HTMLElement
       if (!node) {
         return
       }
@@ -435,39 +433,40 @@ export default class JSWindow extends Vue {
         node.style.animation = ''
       }
       node.addEventListener('animationend', animationEnd)
-      node.style.animation = 'Show 0.5s ease 0s none'
+      node.style.animation = `${this.$style.Show} 0.5s ease 0s none`
       node.style.visibility = 'visible'
-      this.boxEnumState = WindowState.NORMAL
+      this.changeWindowState = WindowState.NORMAL
     } else {
-      const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
+      const node: HTMLElement | null = this.$el as HTMLElement
       if (!node) {
         return
       }
       node.style.animation = ''
       setTimeout(() => {
-        this.boxEnumState = WindowState.NORMAL
-        node.style.animation = 'Restore 0.5s ease 0s forwards'
+        this.changeWindowState = WindowState.NORMAL
+        this.$forceUpdate()
+        node.style.animation = `${this.$style.Restore} 0.5s ease 0s forwards`
       }, 1)
     }
   }
   private hide() {
-    const node: (HTMLElement & { _symbol?: JSWindow }) | null = this.rootRef
+    const node: HTMLElement | null = this.$el as HTMLElement
     if (!node) {
       return
     }
     node.style.animation = ''
     const animation = () => {
       node.removeEventListener('animationend', animation)
-      this.boxEnumState = WindowState.HIDE
+      this.changeWindowState = WindowState.HIDE
     }
     setTimeout(() => {
       node.addEventListener('animationend', animation)
-      node.style.animation = 'Hide 0.5s ease 0s forwards'
+      node.style.animation = `${this.$style.Hide} 0.5s ease 0s forwards`
     }, 1)
   }
   private onActive(e: Event & { params?: boolean }) {
     this.active = e.params === true
-    const thisNode = this.rootRef
+    const thisNode = this.$el as HTMLElement
     if (this.active) {
       const parent = thisNode.parentNode
       if (parent) {
@@ -493,11 +492,12 @@ export default class JSWindow extends Vue {
     }
   }
   private onWindowState(windowState: WindowState) {
-    this.windowInfo = { ...this.windowInfo, windowState }
+    this.nowWindowState = windowState
+    this.changeState()
   }
   private onMove(e: JWFEvent): void {
     // if (WindowManager.frame == null) return;
-    if (this.windowState === WindowState.MAX) {
+    if (this.nowWindowState === WindowState.MAX) {
       return
     }
     let [px, py, pwidth, pheight] = [
@@ -596,77 +596,77 @@ export default class JSWindow extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" module>
 $titleSize: 32px;
-.jswindow {
+.jsWindow {
   position: fixed;
   border: solid 1px rgba(0, 0, 0, 0.4);
   box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.4);
   border-radius: 1em 1em 0 0;
-  @keyframes Show {
-    0% {
-      opacity: 0;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes Hide {
-    100% {
-      opacity: 0;
-      transform: scale(0);
-    }
-
-    0% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  @keyframes Max {
-    0% {
-      transform: scale(0.5);
-    }
-
-    100% {
-      transform: scale(1);
-    }
-  }
-  @keyframes Restore {
-    0% {
-      transform: scale(1.5);
-    }
-
-    100% {
-      transform: scale(1);
-    }
-  }
-  @keyframes MinRoot {
-    100% {
-      height: $titleSize;
-    }
+}
+@keyframes Show {
+  0% {
+    opacity: 0;
   }
 
-  @keyframes MinClient {
-    100% {
-      height: 0px;
-    }
+  100% {
+    opacity: 1;
   }
-  @keyframes MinRestoreClient {
-    0% {
-      max-height: 0px;
-    }
-    100% {
-      max-height: 100%;
-    }
+}
+@keyframes Hide {
+  100% {
+    opacity: 0;
+    transform: scale(0);
   }
-  @keyframes MinRestoreRoot {
-    0% {
-      max-height: $titleSize;
-    }
-    100% {
-      max-height: 100%;
-    }
+
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes Max {
+  0% {
+    transform: scale(0.5);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes Restore {
+  0% {
+    transform: scale(1.5);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes MinRoot {
+  100% {
+    height: $titleSize;
+  }
+}
+
+@keyframes MinClient {
+  100% {
+    height: 0px;
+  }
+}
+@keyframes MinRestoreClient {
+  0% {
+    max-height: 0px;
+  }
+  100% {
+    max-height: 100%;
+  }
+}
+@keyframes MinRestoreRoot {
+  0% {
+    max-height: $titleSize;
+  }
+  100% {
+    max-height: 100%;
   }
 }
 </style>

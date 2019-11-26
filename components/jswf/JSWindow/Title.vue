@@ -9,10 +9,20 @@
       <slot />
     </div>
     <div id="icons">
-      <div id="min" @click="onIconClick" />
-      <div id="max" @click="onIconClick" />
-      <div v-if="windowState === 2" id="normal" @click="onIconClick" />
-      <div id="close" @click="onIconClick" />
+      <div id="min" :style="styleIcons" @click="onIconClick" />
+      <div
+        v-if="windowState !== 2"
+        id="max"
+        :style="styleIcons"
+        @click="onIconClick"
+      />
+      <div
+        v-if="windowState === 2"
+        id="normal"
+        :style="styleIcons"
+        @click="onIconClick"
+      />
+      <div id="close" :style="styleIcons" @click="onIconClick" />
     </div>
   </div>
 </template>
@@ -32,7 +42,11 @@ export default class Title extends Vue {
   private windowState!: WindowState
   @Prop({ type: Boolean, default: false })
   private active!: boolean
-  private styleObject = {
+  private styleIcons: Partial<CSSStyleDeclaration> = {
+    width: this.size - 2 + 'px',
+    height: this.size - 2 + 'px'
+  }
+  private styleObject: Partial<CSSStyleDeclaration> = {
     height: this.size + 'px',
     backgroundColor: this.active
       ? 'rgba(50,100,255,0.9)'
@@ -48,14 +62,23 @@ export default class Title extends Vue {
       : 'rgba(100,150,255,0.9)'
     this.styleObject.color = flag ? 'white' : '#eeeeee'
   }
-  public mounted() {}
+  public mounted() {
+    this.update()
+  }
   public beforeUpdate() {
+    this.update()
+  }
+  public update() {
     this.styleObject = {
       height: this.size + 'px',
       backgroundColor: this.active
         ? 'rgba(50,100,255,0.9)'
         : 'rgba(100,150,255,0.9)',
       color: this.active ? 'white' : '#eeeeee'
+    }
+    this.styleIcons = {
+      width: this.size - 2 + 'px',
+      height: this.size - 2 + 'px'
     }
   }
   private onFrame(e: MouseEvent | TouchEvent) {
@@ -69,7 +92,10 @@ export default class Title extends Vue {
       let state: WindowState | undefined
       switch (node.id) {
         case 'min':
-          state = WindowState.MIN
+          state =
+            this.windowState === WindowState.MIN
+              ? WindowState.NORMAL
+              : WindowState.MIN
           break
         case 'max':
           state = WindowState.MAX
@@ -90,7 +116,6 @@ export default class Title extends Vue {
 </script>
 
 <style lang="scss" scoped>
-$titleSize: 32px;
 .jstitle {
   user-select: none;
   display: flex;
@@ -106,7 +131,6 @@ $titleSize: 32px;
   left: -1px;
   top: -1px;
   right: -1px;
-  height: $titleSize;
 
   > #text {
     flex: 1;
@@ -125,9 +149,6 @@ $titleSize: 32px;
       cursor: default;
       margin: 0.1em;
       background-size: 100% 100%;
-      background-color: rgba(255, 255, 255, 0.05);
-      width: $titleSize - 2;
-      height: $titleSize - 2;
       &:hover {
         background-color: rgba(255, 255, 255, 0.2);
       }

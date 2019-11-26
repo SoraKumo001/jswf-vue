@@ -8,7 +8,7 @@
       title="タイトル2"
       :x="200"
       :y="300"
-      :width="200"
+      :width="400"
       :height="200"
       :titleSize="64"
     >

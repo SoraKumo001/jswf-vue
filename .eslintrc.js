@@ -9,7 +9,7 @@ module.exports = {
   },
   extends: [
     '@nuxtjs',
-    'prettier',
+  //  'prettier',
     'prettier/vue',
     'plugin:prettier/recommended',
     'plugin:nuxt/recommended',
@@ -27,7 +27,8 @@ module.exports = {
     'vue/attribute-hyphenation': 'off',
     'vue/max-attributes-per-line': 'off',
     'vue/html-closing-bracket-newline': 'off',
-    'vue/multiline-html-element-content-newline': 'off'
+    'vue/multiline-html-element-content-newline': 'off',
+    "indent": 'off'
   },
   parserOptions: {
     ecmaFeatures: {

@@ -1,5 +1,5 @@
 <template>
-  <div class="jsClient" :style="styleObject">
+  <div :class="$style.client" :style="styleObject">
     <slot />
   </div>
 </template>
@@ -35,8 +35,8 @@ export default class Client extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-.jsClient {
+<style lang="scss" module>
+.client {
   background: whitesmoke;
   position: absolute;
   overflow: hidden;

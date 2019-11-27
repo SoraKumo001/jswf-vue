@@ -1,6 +1,6 @@
 <template>
   <div
-    class="jsBorder"
+    :class="$style.border"
     :style="styleObject"
     @touchstart="onFrame"
     @mousedown="onFrame"
@@ -111,8 +111,8 @@ export default class Border extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-.jsBorder {
+<style lang="scss" module>
+.border {
   background-color: rgba(0, 0, 0, 0.05);
   position: absolute;
   user-select: none;

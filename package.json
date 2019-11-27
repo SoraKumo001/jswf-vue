@@ -33,6 +33,7 @@
     "vue-tsx-support": "^2.3.2"
   },
   "devDependencies": {
+    "@jswf/vue": "file:..\\..\\www\\@jswf\\vue\\",
     "@nuxt/typescript-build": "^0.3.4",
     "@nuxtjs/eslint-config": "^1.1.2",
     "@nuxtjs/eslint-config-typescript": "^0.1.3",

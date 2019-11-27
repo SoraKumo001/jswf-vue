@@ -871,6 +871,12 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
+"@jswf/vue@file:../../www/@jswf/vue":
+  version "1.0.0"
+
+"@jswf/vue@file:..\\..\\www\\@jswf\\vue\\":
+  version "1.0.0"
+
 "@nodelib/fs.scandir@2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.3.tgz#3a582bdb53804c6ba6d146579c46e52130cf4a3b"

@@ -19,7 +19,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
-import JSWindow from '../components/jswf/JSWindow/index.vue'
+import { JSWindow } from '../components/'
+// import { JSWindow } from '@jswf/vue'
+
 @Component({
   components: {
     JSWindow

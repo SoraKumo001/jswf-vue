@@ -1,28 +1,28 @@
 <template>
   <div
-    class="jstitle"
+    :class="$style.title"
     :style="styleObject"
     @touchstart="onFrame"
     @mousedown="onFrame"
   >
-    <div id="text">
+    <div :id="$style.text">
       <slot />
     </div>
-    <div id="icons">
-      <div id="min" :style="styleIcons" @click="onIconClick" />
+    <div :id="$style.icons">
+      <div :id="$style.min" :style="styleIcons" @click="onIconClick" />
       <div
         v-if="windowState !== 2"
-        id="max"
+        :id="$style.max"
         :style="styleIcons"
         @click="onIconClick"
       />
       <div
         v-if="windowState === 2"
-        id="normal"
+        :id="$style.normal"
         :style="styleIcons"
         @click="onIconClick"
       />
-      <div id="close" :style="styleIcons" @click="onIconClick" />
+      <div :id="$style.close" :style="styleIcons" @click="onIconClick" />
     </div>
   </div>
 </template>
@@ -115,8 +115,8 @@ export default class Title extends Vue {
 }
 </script>
 
-<style lang="scss" scoped>
-.jstitle {
+<style lang="scss" module>
+.title {
   user-select: none;
   display: flex;
   position: absolute;
